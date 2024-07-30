@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keyword Extraction</title>
+    <title>Document Summarization</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
         }
-        textarea, input[type="file"] {
+        input[type="file"] {
             width: 100%;
             margin-top: 10px;
         }
@@ -24,20 +24,19 @@
     </style>
 </head>
 <body>
-    <h1>Keyword Extraction Tool</h1>
-    <textarea id="content" placeholder="Paste your text here..."></textarea>
+    <h1>Document Summarization Tool</h1>
     <input type="file" id="fileInput" accept=".pdf, .docx">
-    <button onclick="extractKeywords()">Extract Keywords</button>
+    <button onclick="summarizeDocument()">Summarize Document</button>
     <div class="result" id="result"></div>
     
-    <!-- Include Compromise library -->
-    <script src="https://unpkg.com/compromise"></script>
     <script>
-        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
-
-        async function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        async function summarizeDocument() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                document.getElementById('result').innerHTML = 'Please select a file.';
+                return;
+            }
 
             const formData = new FormData();
             formData.append('file', file);
@@ -48,38 +47,11 @@
             });
 
             const result = await response.json();
-            if (result.keywords) {
-                document.getElementById('result').innerHTML = '<strong>Extracted Keywords:</strong><br>' + result.keywords.join(', ');
+            if (result.summary) {
+                document.getElementById('result').innerHTML = '<strong>Document Summary:</strong><br>' + result.summary;
             } else {
                 document.getElementById('result').innerHTML = 'Error: ' + result.error;
             }
-        }
-
-        // Function to extract keywords from the text
-        function extractKeywords() {
-            // Get the text content from the textarea
-            const text = document.getElementById('content').value;
-
-            // Check if the text is empty
-            if (!text.trim()) {
-                document.getElementById('result').innerHTML = 'Please enter some text.';
-                return;
-            }
-
-            // Initialize the compromise library with the text
-            const nlp = window.nlp(text);
-
-            // Extract nouns (a simple way to get keywords)
-            const nouns = nlp.nouns().out('array');
-
-            // Check if any nouns are extracted
-            if (nouns.length === 0) {
-                document.getElementById('result').innerHTML = 'No keywords found.';
-                return;
-            }
-
-            // Display the keywords
-            document.getElementById('result').innerHTML = '<strong>Extracted Keywords:</strong><br>' + nouns.join(', ');
         }
     </script>
 </body>
