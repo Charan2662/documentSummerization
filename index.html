@@ -1,145 +1,86 @@
-< !DOCTYPE
-html >
-< html
-lang = "en" >
-< head >
-< meta
-charset = "UTF-8" >
-< meta
-name = "viewport"
-content = "width=device-width, initial-scale=1.0" >
-< title > Keyword
-Extraction < / title >
-< style >
-body
-{
-    font - family: Arial, sans - serif;
-padding: 20
-px;
-}
-textarea, input[type = "file"] {
-    width: 100 %;
-margin - top: 10
-px;
-}
-button
-{
-    margin - top: 10px;
-padding: 10
-px
-20
-px;
-}
-.result
-{
-    margin - top: 20px;
-font - weight: bold;
-}
-< / style >
-< / head >
-< body >
-< h1 > Keyword
-Extraction
-Tool < / h1 >
-< textarea
-id = "content"
-placeholder = "Paste your text here..." > < / textarea >
-< input
-type = "file"
-id = "fileInput"
-accept = ".pdf, .docx" >
-< button
-onclick = "extractKeywords()" > Extract
-Keywords < / button >
-< div
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword Extraction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        textarea, input[type="file"] {
+            width: 100%;
+            margin-top: 10px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Keyword Extraction Tool</h1>
+    <textarea id="content" placeholder="Paste your text here..."></textarea>
+    <input type="file" id="fileInput" accept=".pdf, .docx">
+    <button onclick="extractKeywords()">Extract Keywords</button>
+    <div class="result" id="result"></div>
+    
+    <!-- Include Compromise library -->
+    <script src="https://unpkg.com/compromise"></script>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
 
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-class ="result" id="result" > < /div >
+            const formData = new FormData();
+            formData.append('file', file);
 
-< !-- Include
-Compromise
-library -->
-< script
-src = "https://unpkg.com/compromise" > < / script >
-< script
-src = "script.js" > < / script >
-< script >
-document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            const response = await fetch('http://localhost:5000/upload', {
+                method: 'POST',
+                body: formData,
+            });
 
-async function
-handleFileUpload(event)
-{
-    const
-file = event.target.files[0];
-if (!file)
-return;
+            const result = await response.json();
+            if (result.keywords) {
+                document.getElementById('result').innerHTML = '<strong>Extracted Keywords:</strong><br>' + result.keywords.join(', ');
+            } else {
+                document.getElementById('result').innerHTML = 'Error: ' + result.error;
+            }
+        }
 
-const
-formData = new
-FormData();
-formData.append('file', file);
+        // Function to extract keywords from the text
+        function extractKeywords() {
+            // Get the text content from the textarea
+            const text = document.getElementById('content').value;
 
-const
-response = await fetch('http://localhost:5000/upload', {
-    method: 'POST',
-    body: formData,
-});
+            // Check if the text is empty
+            if (!text.trim()) {
+                document.getElementById('result').innerHTML = 'Please enter some text.';
+                return;
+            }
 
-const
-result = await response.json();
-if (result.keywords) {
-document.getElementById('result').innerHTML = '<strong>Extracted Keywords:</strong><br>' + result.keywords.join(', ');
-} else {
-document.getElementById('result').innerHTML = 'Error: ' + result.error;
-}
-}
+            // Initialize the compromise library with the text
+            const nlp = window.nlp(text);
 
-// Function
-to
-extract
-keywords
-from the text
+            // Extract nouns (a simple way to get keywords)
+            const nouns = nlp.nouns().out('array');
 
-function
-extractKeywords()
-{
-// Get
-the
-text
-content
-from the textarea
+            // Check if any nouns are extracted
+            if (nouns.length === 0) {
+                document.getElementById('result').innerHTML = 'No keywords found.';
+                return;
+            }
 
-const
-text = document.getElementById('content').value;
-
-// Check if the
-text is empty
-if (!text.trim()) {
-document.getElementById('result').innerHTML = 'Please enter some text.';
-return;
-}
-
-// Initialize
-the
-compromise
-library
-with the text
-const nlp = window.nlp(text);
-
-// Extract nouns (a simple way to get keywords)
-const nouns = nlp.nouns().out('array');
-
-// Check if any nouns are extracted
-if (nouns.length == = 0) {
-document.getElementById('result').innerHTML = 'No keywords found.';
-return;
-}
-
-// Display
-the
-keywords
-document.getElementById('result').innerHTML = '<strong>Extracted Keywords:</strong><br>' + nouns.join(', ');
-}
-< / script >
-    < / body >
-        < / html >
+            // Display the keywords
+            document.getElementById('result').innerHTML = '<strong>Extracted Keywords:</strong><br>' + nouns.join(', ');
+        }
+    </script>
+</body>
+</html>
