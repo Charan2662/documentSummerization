@@ -1,16 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-from transformers import pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
 import fitz  # PyMuPDF
 from docx import Document
 
 app = Flask(__name__)
 CORS(app)
-
-# Load summarization pipeline
-summarizer = pipeline("summarization")
-
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -23,7 +19,7 @@ def upload_file():
     # Save the uploaded file
     file_path = os.path.join('/mnt/data/', file.filename)
     file.save(file_path)
-
+    
     # Extract text based on file type
     if file.filename.endswith('.pdf'):
         text = extract_text_from_pdf(file_path)
@@ -32,10 +28,9 @@ def upload_file():
     else:
         return jsonify({'error': 'Unsupported file type'}), 400
 
-    # Perform summarization
-    summary = summarize_text(text)
-    return jsonify({'summary': summary})
-
+    # Perform keyword extraction
+    keywords = extract_keywords(text)
+    return jsonify({'keywords': keywords})
 
 def extract_text_from_pdf(pdf_path):
     text = ''
@@ -44,18 +39,17 @@ def extract_text_from_pdf(pdf_path):
             text += page.get_text()
     return text
 
-
 def extract_text_from_docx(docx_path):
     doc = Document(docx_path)
     text = ' '.join([para.text for para in doc.paragraphs])
     return text
 
-
-def summarize_text(text):
-    # Summarize the text using the pipeline
-    summary = summarizer(text, max_length=150, min_length=30, do_sample=False)
-    return summary[0]['summary_text']
-
+def extract_keywords(text):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    X = vectorizer.fit_transform([text])
+    indices = X[0].nonzero()[1]
+    keywords = [vectorizer.get_feature_names_out()[i] for i in indices]
+    return keywords
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
